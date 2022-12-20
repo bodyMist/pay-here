@@ -3,20 +3,13 @@ from members.models import Member
 
 class AccountBook(models.Model):
     account_book_id = models.AutoField(primary_key=True)
-    written = models.DateField()
+    amount = models.PositiveIntegerField(null=True, blank=True)
+    description = models.CharField(max_length=255, null=True, blank=True)
+    written = models.DateTimeField()
     member_id = models.ForeignKey(Member, on_delete=models.CASCADE)
 
     class Meta:
         db_table = 'ACCOUNT_BOOK'
-
-class Detail(models.Model):
-    detail_id = models.AutoField(primary_key=True)
-    amount = models.PositiveIntegerField(null=True, blank=True)
-    description = models.CharField(max_length=255, null=True, blank=True)
-    account_book_id = models.ForeignKey(AccountBook, on_delete=models.CASCADE)
-
-    class Meta:
-        db_table = 'DETAIL'
 
 class ShortUrl(models.Model):
     short_url_id = models.AutoField(primary_key=True)
