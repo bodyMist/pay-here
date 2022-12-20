@@ -19,8 +19,8 @@ from dotenv import load_dotenv
 import os
 
 # Get Secret Key From .env
-load_dotenv(dotenv_path='.', verbose=True)
-SECRET_KEY = os.environ.get('SECRET_KEY')
+load_dotenv(verbose=True)
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
