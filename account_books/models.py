@@ -9,7 +9,7 @@ class AccountBook(models.Model):
     member_id = models.ForeignKey(Member, on_delete=models.CASCADE)
 
     class Meta:
-        db_table = 'ACCOUNT_BOOK'
+        db_table = 'ACCOUNT_BOOKS'
 
 class ShortUrl(models.Model):
     short_url_id = models.AutoField(primary_key=True)
@@ -18,4 +18,4 @@ class ShortUrl(models.Model):
     expired = models.DateTimeField()
     
     class Meta:
-        db_table = 'SHORT_URL'
+        db_table = 'SHORT_URLS'
