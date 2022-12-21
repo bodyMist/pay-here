@@ -90,3 +90,27 @@ class AccountBookDetailAPIView(APIView):
             serializer.data, 
             status=status.HTTP_200_OK
         )
+    
+    @transaction.atomic
+    def put(self, request, pk):
+        jwt_authenticator = JWTAuthentication()
+        member_data, token = jwt_authenticator.authenticate(request)
+        account_book = self.get_object(pk)  # raise exception
+
+        if member_data is None or \
+        member_data.__getattribute__('member_id') == account_book.__getattribute__('member_id'):
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        request.data['member_id'] = member_data.__getattribute__('member_id')
+        serializer = AccountBookSerializer(account_book, data=request.data)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                serializer.data,
+                status=status.HTTP_200_OK
+            )
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+            )
