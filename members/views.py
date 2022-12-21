@@ -51,6 +51,7 @@ def login(request):
             access_token = str(token.access_token)
 
             response = Response(
+                headers=
                 {
                     "access_token": access_token,
                     "refresh_token": refresh_token
@@ -61,11 +62,11 @@ def login(request):
     return Response(status=status.HTTP_400_BAD_REQUEST)
 
 @transaction.atomic
-@api_view(['POST'])
+@api_view(['DELETE'])
 def logout(request):
-    if request.method == 'POST':
-        access_token = RefreshToken(request.data.get('access_token'))
-        refresh_token = RefreshToken(request.data.get('refresh_token'))
+    if request.method == 'DELETE':
+        access_token = RefreshToken(request.META.get('access_token'))
+        refresh_token = RefreshToken(request.META.get('refresh_token'))
         access_token.blacklist()
         refresh_token.blacklist()
 
