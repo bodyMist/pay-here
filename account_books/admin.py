@@ -1,3 +1,4 @@
 from django.contrib import admin
+from account_books.models import AccountBook, ShortUrl
 
-# Register your models here.
+admin.site.register([AccountBook, ShortUrl])
