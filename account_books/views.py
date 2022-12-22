@@ -2,12 +2,19 @@ from rest_framework import status,exceptions
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser
+from rest_framework.decorators import permission_classes
+from rest_framework.permissions import AllowAny
 
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from django.db import transaction
-from account_books.models import AccountBook
-from account_books.serializers import AccountBookSerializer
+from django.http import HttpResponseRedirect
+from django.conf import settings
+from account_books.models import AccountBook, ShortUrl
+from account_books.serializers import AccountBookSerializer, ShortUrlSerializer
+
+from datetime import datetime, timedelta
+import os
 
 class AccountBookListAPIView(APIView):
     def get_list(self, member_id, year=None, month=None, day=None):
@@ -112,10 +119,6 @@ class AccountBookDetailAPIView(APIView):
         jwt_authenticator = JWTAuthentication()
         member_data, token = jwt_authenticator.authenticate(request)
         account_book = self.get_object(pk)  # raise exception
-
-        if member_data is None or \
-        member_data.__getattribute__('member_id') == account_book.__getattribute__('member_id'):
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
         serializer = AccountBookSerializer(account_book)
         return Response(
             serializer.data, 
@@ -159,4 +162,61 @@ class AccountBookDetailAPIView(APIView):
         account_book.delete()
         return Response(
             status=status.HTTP_204_NO_CONTENT
+        )
+
+class ShortUrlAPIView(APIView):
+    def convert_base62(self, pk):
+        CODEC = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        ret = []
+        pk = int(pk)
+        while pk > 0:
+            pk, idx = divmod(pk, 62)
+            ret.insert(0, CODEC[idx])
+        return ''.join(ret)
+
+
+    @transaction.atomic
+    def post(self, request):
+        jwt_authenticator = JWTAuthentication()
+        member_data, token = jwt_authenticator.authenticate(request)
+        target_url = request.data['url']
+        try:
+            url = ShortUrl.objects.get(url=target_url)
+            serializer = ShortUrlSerializer(url)
+            return Response(
+                serializer.data,
+                status=status.HTTP_200_OK
+                )
+        except ShortUrl.DoesNotExist:
+            pk = target_url.split('/')[-1]
+            temp_url = self.convert_base62(pk)
+            encoded = settings.APP_URL + temp_url
+            request.data['encoded'] = encoded
+            request.data['expired'] = datetime.now() + timedelta(hours=6)
+            serializer = ShortUrlSerializer(data = request.data)
+
+            if serializer.is_valid():
+                serializer.save(encoded=encoded)
+                return Response(
+                    serializer.data,
+                    status=status.HTTP_201_CREATED
+                )
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    @transaction.atomic
+    @permission_classes([AllowAny])
+    def get(self, request, encoded):
+        jwt_authenticator = JWTAuthentication()
+        member_data, token = jwt_authenticator.authenticate(request)
+        encoded_url = 'http://127.0.0.1:8000/short/' + encoded
+        print(encoded_url)
+        redirect = ShortUrl.objects.get(encoded=encoded_url)
+        date_diff = datetime.now() - redirect.expired
+        if date_diff.seconds > 0:
+            return HttpResponseRedirect(redirect_to=redirect.url)
+        redirect.delete()
+        return Response(
+            status=status.HTTP_404_NOT_FOUND
         )

@@ -19,9 +19,13 @@ from django.conf.urls import include
 
 from rest_framework_simplejwt.views import TokenRefreshView
 
+from account_books.views import ShortUrlAPIView
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('members/', include('members.urls')),
     path('auth/refresh', TokenRefreshView.as_view()),
-    path('account-books/', include('account_books.urls'))
+    path('account-books/', include('account_books.urls')),
+    path('short', ShortUrlAPIView.as_view()),
+    path('short/<str:encoded>', ShortUrlAPIView.as_view()),
 ]
