@@ -75,6 +75,37 @@ class AccountBookDetailAPIView(APIView):
             return AccountBook.objects.get(account_book_id=pk)
         except AccountBook.DoesNotExist:
             raise exceptions.NotFound
+    
+    @transaction.atomic
+    def post(self, request, pk):
+        jwt_authenticator = JWTAuthentication()
+        member_data, token = jwt_authenticator.authenticate(request)
+        account_book = self.get_object(pk)  # raise exception
+
+        if member_data is None or \
+        member_data.__getattribute__('member_id') == account_book.__getattribute__('member_id'):
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        new_data = {
+            'account_book_id': None,
+            'description': account_book.description + '-copy',
+            'written': account_book.written,
+            'member_id': member_data.__getattribute__('member_id')
+        }
+        serializer = AccountBookSerializer(data=new_data)
+
+        if serializer.is_valid():
+            serializer.save()
+        
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED
+            )
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     @transaction.atomic
     def get(self, request, pk):
@@ -114,3 +145,18 @@ class AccountBookDetailAPIView(APIView):
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
             )
+
+    @transaction.atomic
+    def delete(self, request, pk):
+        jwt_authenticator = JWTAuthentication()
+        member_data, token = jwt_authenticator.authenticate(request)
+        account_book = self.get_object(pk)  # raise exception
+
+        if member_data is None or \
+        member_data.__getattribute__('member_id') == account_book.__getattribute__('member_id'):
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        
+        account_book.delete()
+        return Response(
+            status=status.HTTP_204_NO_CONTENT
+        )
