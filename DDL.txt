@@ -1,0 +1,51 @@
+CREATE TABLE `MEMBERS` (`last_login` datetime(6) NULL, `is_superuser` bool NOT NULL, `username` varchar(150) NOT NULL UNIQUE, `first_name` varchar(150) NOT NULL, `last_name` varchar(150) NOT NULL, `is_staff` bool NOT NULL, `is_active` bool NOT NULL, `date_joined` datetime(6) NOT NULL, `member_id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `email` varchar(30) NOT NULL UNIQUE, `password` varchar(255) NOT NULL);
+CREATE TABLE `MEMBERS_groups` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `member_id` integer NOT NULL, `group_id` integer NOT NULL);
+CREATE TABLE `MEMBERS_user_permissions` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `member_id` integer NOT NULL, `permission_id` integer NOT NULL); 
+ALTER TABLE `MEMBERS_groups` ADD CONSTRAINT `MEMBERS_groups_member_id_group_id_1af0d986_uniq` UNIQUE (`member_id`, `group_id`);
+ALTER TABLE `MEMBERS_groups` ADD CONSTRAINT `MEMBERS_groups_member_id_789815e1_fk_MEMBERS_member_id` FOREIGN KEY (`member_id`) REFERENCES `MEMBERS` (`member_id`);
+ALTER TABLE `MEMBERS_groups` ADD CONSTRAINT `MEMBERS_groups_group_id_2238190b_fk_auth_group_id` FOREIGN KEY (`group_id`) REFERENCES `auth_group` (`id`);   
+ALTER TABLE `MEMBERS_user_permissions` ADD CONSTRAINT `MEMBERS_user_permissions_member_id_permission_id_eacf8f15_uniq` UNIQUE (`member_id`, `permission_id`);
+ALTER TABLE `MEMBERS_user_permissions` ADD CONSTRAINT `MEMBERS_user_permissions_member_id_07affe43_fk_MEMBERS_member_id` FOREIGN KEY (`member_id`) REFERENCES `MEMBERS` (`member_id`);
+ALTER TABLE `MEMBERS_user_permissions` ADD CONSTRAINT `MEMBERS_user_permiss_permission_id_13957d00_fk_auth_perm` FOREIGN KEY (`permission_id`) REFERENCES `auth_permission` (`id`);
+ALTER TABLE `MEMBERS` DROP COLUMN `username`;
+
+CREATE TABLE `ACCOUNT_BOOK` (`account_book_id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `written` date NOT NULL);
+
+CREATE TABLE `SHORT_URL` (`short_url_id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `url` varchar(2000) NOT NULL, `encoded` varchar(1000) NOT NULL, `expired` datetime(6) NOT NULL);
+
+CREATE TABLE `DETAIL` (`detail_id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `amount` integer UNSIGNED NULL, `description` varchar(255) NULL, `account_book_id_id` integer NOT NULL);
+ALTER TABLE `DETAIL` ADD CONSTRAINT `DETAIL_account_book_id_id_05e4ef48_fk_ACCOUNT_B` FOREIGN KEY (`account_book_id_id`) REFERENCES `ACCOUNT_BOOK` (`account_book_id`);
+ALTER TABLE `ACCOUNT_BOOK` ADD COLUMN `member_id_id` integer NOT NULL , ADD CONSTRAINT `ACCOUNT_BOOK_member_id_id_e8afc4fe_fk_MEMBERS_member_id` FOREIGN KEY (`member_id_id`) REFERENCES `MEMBERS`(`member_id`);
+
+
+ALTER TABLE `ACCOUNT_BOOK` ADD COLUMN `amount` integer UNSIGNED NULL;
+ALTER TABLE `ACCOUNT_BOOK` ADD COLUMN `description` varchar(255) NULL;
+ALTER TABLE `ACCOUNT_BOOK` MODIFY `written` datetime(6) NOT NULL;
+DROP TABLE `DETAIL` CASCADE;
+RENAME TABLE `ACCOUNT_BOOK` TO `ACCOUNT_BOOKS`;
+RENAME TABLE `SHORT_URL` TO `SHORT_URLS`;
+
+CREATE TABLE `token_blacklist_blacklistedtoken` (`id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `blacklisted_at` datetime(6) NOT NULL);
+
+CREATE TABLE `token_blacklist_outstandingtoken` (`id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `jti` char(32) NOT NULL UNIQUE, `token` longtext NOT NULL, `created_at` datetime(6) NOT NULL, `expires_at` datetime(6) NOT NULL, `user_id` integer NOT NULL);
+
+ALTER TABLE `token_blacklist_blacklistedtoken` ADD COLUMN `token_id` integer NOT NULL UNIQUE , ADD CONSTRAINT `token_blacklist_blac_token_id_3cc7fe56_fk_token_bla` FOREIGN KEY (`token_id`) REFERENCES `token_blacklist_outstandingtoken`(`id`);
+ALTER TABLE `token_blacklist_outstandingtoken` ADD CONSTRAINT `token_blacklist_outs_user_id_83bc629a_fk_MEMBERS_m` FOREIGN KEY (`user_id`) REFERENCES `MEMBERS` (`member_id`);
+ALTER TABLE `token_blacklist_outstandingtoken` ADD COLUMN `jti_hex` varchar(255) NULL;
+ALTER TABLE `token_blacklist_outstandingtoken` MODIFY `jti_hex` varchar(255) NOT NULL;
+ALTER TABLE `token_blacklist_outstandingtoken` ADD CONSTRAINT `token_blacklist_outstandingtoken_jti_hex_d9bdf6f7_uniq` UNIQUE (`jti_hex`);
+ALTER TABLE `token_blacklist_outstandingtoken` DROP COLUMN `jti`;
+ALTER TABLE `token_blacklist_outstandingtoken` CHANGE `jti_hex` `jti` varchar(255) NOT NULL;
+
+ALTER TABLE `token_blacklist_outstandingtoken` MODIFY `created_at` datetime(6) NULL;
+ALTER TABLE `token_blacklist_outstandingtoken` DROP FOREIGN KEY `token_blacklist_outs_user_id_83bc629a_fk_MEMBERS_m`;
+ALTER TABLE `token_blacklist_outstandingtoken` MODIFY `user_id` integer NULL;
+ALTER TABLE `token_blacklist_outstandingtoken` ADD CONSTRAINT `token_blacklist_outs_user_id_83bc629a_fk_MEMBERS_m` FOREIGN KEY (`user_id`) REFERENCES `MEMBERS` (`member_id`);
+
+ALTER TABLE `token_blacklist_blacklistedtoken` MODIFY `id` bigint AUTO_INCREMENT NOT NULL;
+
+ALTER TABLE `token_blacklist_blacklistedtoken` ADD CONSTRAINT `token_blacklist_blacklistedtoken_token_id_3cc7fe56_fk` FOREIGN KEY (`token_id`) REFERENCES `token_blacklist_outstandingtoken` (`id`);
+
+
+
+
